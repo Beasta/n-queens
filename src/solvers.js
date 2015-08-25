@@ -148,61 +148,51 @@ window.findNQueensSolution = function(n) {
 
 // return the number of nxn chessboards that exist, with n queens placed such that none of them can attack each other
 window.countNQueensSolutions = function(n) {
-  var solutions = 0; //fixme
-  var colsOccupied = [];
-  var majorsOcc = [];
-  var minorsOcc = [];
-  var board = [];
-
-  //populate with false 
-  for (var i = 0; i < n; i++) {
-    colsOccupied.push(false);
+  var start = performance.now();
+  if (n === 0) {
+    return 0;
   }
-  //populate diagonals with false
-  for (var i = 0; i < 2*n-1; i++) {
-    majorsOcc.push(false);
-    minorsOcc.push(false);
-  }
+  var solutions = 0;
+  var colsOcc = 0;
+  var row = 0;
 
-  //create empty board
-  for (var y = 0; y < n; y++) {
-    board.push([]);
-    for (var x = 0; x < n; x++) {
-      board[y].push(0);
-    }
-  }
-
-
-  function solutionFinder(rowIndex) {
+  function solutionFinder(majorsOcc, minorsOcc) {
     //reaching the end of the board
-    if (rowIndex === n) {
-      solutions++;
-      return;
-    }
     for(var col = 0; col < n; col++){
-      var major = toMajor(rowIndex, col, n);
-      var minor = toMinor(rowIndex, col);
+      var majorFlag = 1 << col;
+      var minorFlag = 1 << col;
+      var colFlag   = 1 << col;//set the column flag for whatever column we're in 
       //checking to see if there is a conflict at the current location
-      if (colsOccupied[col] || majorsOcc[major] || minorsOcc[minor]) {
+      if ( (majorsOcc & majorFlag) || (minorsOcc & minorFlag) || (colsOcc & colFlag) ) {
         continue;
       }
       //occupy the space and turn on the death rays
-      colsOccupied[col] = true;
-      majorsOcc[major] = true;
-      minorsOcc[minor] = true;
-      board[rowIndex][col] = 1;
+      row++;
+      if (row === n) {
+        solutions++;
+        row--;
+        continue;
+      }
+      else {
+        //set invalid
+        colsOcc = colsOcc | colFlag;
+        //recursion
+        solutionFinder((majorsOcc | majorFlag) << 1, (minorsOcc | minorFlag) >> 1);
+        //set valid
+        colsOcc = colsOcc ^ colFlag;
+      }
+      row--;
+      // colsOcc[col] = true;
       //call a recursion with an incremented row
-      solutionFinder(rowIndex + 1);
       //turn off the death rays
-      colsOccupied[col] = false;
-      majorsOcc[major] = false;
-      minorsOcc[minor] = false;
-      board[rowIndex][col] = 0;
+      // colsOcc[col] = false;
     }
   }
-  solutionFinder(0);
+  solutionFinder(0, 0);
   console.log('Number of solutions for ' + n + ' queens:', solutions);
+  console.log(performance.now()-start);
   return solutions;
+
 };
 
 //find major diagonal numbers with row and column
